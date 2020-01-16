@@ -1,0 +1,47 @@
+.text
+.global	_start
+
+_start:		LDR		R1, =0xFF200000		//LEDR ports
+			LDR		R3, =0xFF200050		//KEYS
+			MOV		R4, #1				//initial pattern
+			LDR		R8, =0xFFFEC600		//R8 points to timer
+			LDR		R0, =20000000
+			STR		R0, [R8]			//write to load register
+			MOV		R0, #0b011			//A=1, E=1
+			STR		R0, [R8, #8]		//write to control register
+			MOV		R9, #0				//flag that keeps track of whether the light is at the left or right
+										//when R9 = 0, light is on the right
+			MOV		R2, #0				//flag to keep track of the state of the display (ie. paused or moving)
+										//when R2 = 0, display is in a moving state
+
+/*controls the ledr*/										
+DISPLAY:	STR		R4, [R1]			//light up LEDR
+			LDR		R7, [R3]			//read KEYS
+			CMP		R7, #0b1000			//check if KEY is pressed
+			BEQ		PAUSE
+			CMP		R2, #1				//check if display is in paused state
+			BEQ		DISPLAY				//if yes, stay in the display subroutine
+			B   	SHIFT				//if no, branch to shift subroutine
+
+/*updates the state of the display (ie. paused vs. moving)*/			
+PAUSE:		LDR		R7, [R3]			//read KEYS
+			CMP		R7, #0b0000			//check if KEY is not pressed
+			BNE		PAUSE
+			EOR		R2, #1				//complement R2 or "state of the display" if KEY is pressed
+			B 		DISPLAY	
+
+/*rotates the light to the left or right depending on which side of the display it last reached*/			
+SHIFT:		CMP		R4, #0b1000000000
+			MOVEQ	R9, #1				//if the light is on the left/has moved to the left, R9 = 1
+			CMP		R4, #0b0000000001
+			MOVEQ	R9, #0				//if the light is on the right/has moved to the right, R9 = 0
+			CMP		R9, #0
+			ROREQ	R4, #31
+			RORNE	R4, #1
+
+DELAY:		LDR		R0, [R8, #0xC]		
+			CMP		R0, #0
+			BEQ		DELAY
+			STR		R0, [R8, #0xC]
+			B       DISPLAY
+			.end

@@ -1,0 +1,37 @@
+		.text
+		.global	_start
+			
+_start:		
+		LDR	R9,=LIST
+		LDR	R2,[R9],#4			
+		MOV R1,R9
+		MOV R3,R2
+		MOV R0,#1
+W_LOOP:	CMP	R0,#0 //IF R0 IS SWAPPED
+		BEQ	E_WHILE
+		MOV	R0,#0
+		MOV R4,#0 //COUNTER OF FORLOOP
+F_LOOP:	CMP	R4,R3
+		BEQ E_FOR
+		LDR R5,[R9]
+		LDR R6,[R9,#4]
+		CMP R5,R6
+		BLT SWAP
+		ADD R4,#1
+		ADD R9,#4
+		B	F_LOOP
+
+SWAP:	STR R5,[R9]
+		STR R6,[R9,#4]
+		MOV R0,#1
+		ADD R4,#1
+		ADD R9,#4
+		B	F_LOOP
+		
+E_FOR:	SUB R3,#1
+		B	W_LOOP
+
+E_WHILE: 	B	E_WHILE
+
+LIST:	.word		10, 1400, 45, 23, 5, 3, 8, 17, 4, 20, 33
+		.end
